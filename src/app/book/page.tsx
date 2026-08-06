@@ -48,7 +48,7 @@ export default function BookPage() {
             </div>
           </Reveal>
 
-          <Reveal delay={150} className="mt-10">
+          <Reveal delay={150} className="relative z-10 mt-10">
             <BookingWidget
               layout="card"
               properties={PROPERTIES}
