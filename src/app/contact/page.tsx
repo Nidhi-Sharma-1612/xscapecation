@@ -1,4 +1,4 @@
-import { ExternalLink, Mail, MapPin, Phone, Send } from "lucide-react";
+import { ExternalLink, Mail, Phone, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/PageBanner";
@@ -138,16 +138,6 @@ export default function ContactPage() {
                 Contact Details
               </h3>
               <ul className="mt-6 space-y-5 text-sm text-charcoal/80">
-                <li className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wine-600/10 text-wine-600">
-                    <MapPin className="h-4 w-4" />
-                  </span>
-                  <span className="pt-1.5">
-                    2853 East Admiral Place
-                    <br />
-                    Tulsa, OK 74110
-                  </span>
-                </li>
                 <li className="flex items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wine-600/10 text-wine-600">
                     <Phone className="h-4 w-4" />
@@ -195,15 +185,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-
-      <div className="h-96 w-full">
-        <iframe
-          title="Property location map"
-          src="https://www.google.com/maps?q=2853+East+Admiral+Place,+Tulsa,+OK+74110&output=embed"
-          className="h-full w-full border-0"
-          loading="lazy"
-        />
-      </div>
 
       <Footer />
     </main>

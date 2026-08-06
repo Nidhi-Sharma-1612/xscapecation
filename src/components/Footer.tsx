@@ -1,4 +1,4 @@
-import { ExternalLink, Mail, MapPin, Phone } from "lucide-react";
+import { ExternalLink, Mail, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FacebookIcon, InstagramIcon } from "./icons/SocialIcons";
@@ -107,14 +107,6 @@ export default function Footer() {
               Contact
             </h3>
             <ul className="mt-4 space-y-3 text-sm">
-              <li className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold-300" />
-                <span>
-                  2853 East Admiral Place
-                  <br />
-                  Tulsa, OK 74110
-                </span>
-              </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 shrink-0 text-gold-300" />
                 <a
