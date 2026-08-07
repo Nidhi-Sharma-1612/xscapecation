@@ -45,7 +45,7 @@ export default async function PropertiesPage() {
 
       <div className="bg-cream-dark pb-8">
         <div className="relative z-20 mx-auto -mt-8 w-full max-w-5xl px-6 lg:-mt-9 lg:px-10">
-          <BookingWidget layout="bar" properties={properties} />
+          <BookingWidget layout="bar" properties={properties} showAvailability />
         </div>
       </div>
 

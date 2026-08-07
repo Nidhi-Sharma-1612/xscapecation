@@ -22,12 +22,8 @@ import PropertyCard from "@/components/PropertyCard";
 import PropertyGallery from "@/components/PropertyGallery";
 import Reveal from "@/components/Reveal";
 import { getProperties, getPropertyBySlug } from "@/data/properties";
+import { getPropertyAvailability } from "@/lib/content/availability";
 import { getSiteSettings } from "@/lib/content/site-settings";
-
-export async function generateStaticParams() {
-  const properties = await getProperties();
-  return properties.map((property) => ({ slug: property.slug }));
-}
 
 export async function generateMetadata({
   params,
@@ -42,19 +38,38 @@ export async function generateMetadata({
   };
 }
 
+function timeAgo(date: Date) {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 export default async function PropertyDetailPage({
   params,
+  searchParams,
 }: PageProps<"/properties/[slug]">) {
   const { slug } = await params;
-  const [property, allProperties, settings] = await Promise.all([
+  const query = (await searchParams) as {
+    checkIn?: string;
+    checkOut?: string;
+    guests?: string;
+  };
+  const [property, allProperties, settings, availability] = await Promise.all([
     getPropertyBySlug(slug),
     getProperties(),
     getSiteSettings(),
+    getPropertyAvailability(slug),
   ]);
   if (!property) notFound();
 
   const otherProperties = allProperties.filter((p) => p.slug !== slug);
   const telHref = `tel:1${settings.phone.replace(/\D/g, "")}`;
+  const parsedGuests = query.guests ? Number(query.guests) : undefined;
 
   const features = [
     { icon: Users, label: `${property.guests} Guests` },
@@ -213,8 +228,22 @@ export default async function PropertyDetailPage({
               </p>
 
               <div className="mt-4">
-                <BookingWidget layout="card" property={property} />
+                <BookingWidget
+                  layout="card"
+                  property={property}
+                  initialCheckIn={query.checkIn}
+                  initialCheckOut={query.checkOut}
+                  initialGuests={
+                    parsedGuests && parsedGuests > 0 ? parsedGuests : undefined
+                  }
+                  unavailableDates={availability.blockedDates}
+                />
               </div>
+              {availability.availabilitySyncedAt && (
+                <p className="mt-2 text-center text-xs text-charcoal/40">
+                  Availability last checked {timeAgo(availability.availabilitySyncedAt)}
+                </p>
+              )}
 
               <div className="mt-6 space-y-3 text-sm text-charcoal/70">
                 <div className="flex items-center gap-2">

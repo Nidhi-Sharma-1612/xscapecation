@@ -30,6 +30,7 @@ export type PropertyInput = {
   amenities: string[];
   houseRules: string[];
   additionalRules: string | null;
+  guestyICalUrl: string | null;
 };
 
 function rowToProperty(row: PropertyRow): Property {

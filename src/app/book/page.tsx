@@ -66,6 +66,7 @@ export default async function BookPage() {
               layout="card"
               properties={properties}
               className="p-8"
+              showAvailability
             />
           </Reveal>
 

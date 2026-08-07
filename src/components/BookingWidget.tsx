@@ -1,41 +1,124 @@
 "use client";
 
-import { Minus, Plus, Search, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarCheck, Minus, Plus, Search, Users } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { getAvailabilityAction } from "@/app/properties/actions";
 import type { Property } from "@/data/properties";
 import { addDaysISO, todayISO } from "@/lib/date";
 import DateRangePicker from "./DateRangePicker";
 
-const BOOKING_BASE_URL = "https://book.xscapecations.com/en/properties";
+function rangeOverlapsBlocked(
+  checkIn: string,
+  checkOut: string,
+  unavailableDates: string[],
+) {
+  if (!checkIn || !checkOut) return false;
+  return unavailableDates.some((d) => d >= checkIn && d < checkOut);
+}
 
 export default function BookingWidget({
   layout = "card",
   property,
   properties,
   className = "",
+  initialCheckIn,
+  initialCheckOut,
+  initialGuests,
+  unavailableDates = [],
+  showAvailability = false,
+  navigateCtaLabel = "checkAvailability",
 }: {
   layout?: "bar" | "card";
   property?: Property;
   properties?: Property[];
   className?: string;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuests?: number;
+  unavailableDates?: string[];
+  /** List mode only: fetch and show the picked property's synced Guesty
+   * availability as soon as it's selected from the dropdown, rather than
+   * waiting until the guest lands on that property's own page. */
+  showAvailability?: boolean;
+  /** List mode only: label/icon for the CTA that navigates to the selected
+   * property's page. Defaults to "Check Availability" + a search icon. */
+  navigateCtaLabel?: "checkAvailability" | "bookNow";
 }) {
-  const [checkIn, setCheckIn] = useState(() => todayISO());
-  const [checkOut, setCheckOut] = useState(() => addDaysISO(todayISO(), 3));
-  const [guests, setGuests] = useState(1);
-  const [selectedSlug, setSelectedSlug] = useState("");
+  const [checkIn, setCheckIn] = useState(() => initialCheckIn || todayISO());
+  const [checkOut, setCheckOut] = useState(
+    () => initialCheckOut || addDaysISO(todayISO(), 3),
+  );
+  const [guests, setGuests] = useState(() => initialGuests ?? 1);
+  // No "Any Property" option — the picker always has a real property
+  // selected, defaulting to the first one, so "Check Availability" always
+  // has a specific property's page to send the guest to.
+  const [selectedSlug, setSelectedSlug] = useState(
+    () => properties?.[0]?.slug ?? "",
+  );
+
+  // Fixed single-property mode (property detail page) is the terminal step
+  // that hands off to Guesty for payment. List mode (property picker, used
+  // on Hero/Properties/Book) instead navigates to that property's own page.
+  const isTerminal = Boolean(property);
 
   const selectedProperty =
     property ?? properties?.find((p) => p.slug === selectedSlug);
 
-  const href = useMemo(() => {
-    const base = selectedProperty ? selectedProperty.bookingUrl : BOOKING_BASE_URL;
+  const [fetchedUnavailableDates, setFetchedUnavailableDates] = useState<
+    string[]
+  >([]);
+  const [loadingAvailability, startAvailabilityFetch] = useTransition();
+
+  useEffect(() => {
+    if (!showAvailability || isTerminal || !selectedProperty) return;
+
+    let cancelled = false;
+    const slug = selectedProperty.slug;
+
+    startAvailabilityFetch(async () => {
+      const { blockedDates } = await getAvailabilityAction(slug);
+      if (!cancelled) setFetchedUnavailableDates(blockedDates);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showAvailability, isTerminal, selectedProperty]);
+
+  const effectiveUnavailableDates = isTerminal
+    ? unavailableDates
+    : selectedProperty
+      ? fetchedUnavailableDates
+      : [];
+
+  const internalHref = useMemo(() => {
     const params = new URLSearchParams();
     if (checkIn) params.set("checkIn", checkIn);
     if (checkOut) params.set("checkOut", checkOut);
+    params.set("guests", String(guests));
+    const path = selectedProperty
+      ? `/properties/${selectedProperty.slug}`
+      : "/properties";
+    return `${path}?${params.toString()}`;
+  }, [selectedProperty, checkIn, checkOut, guests]);
+
+  const guestyHref = useMemo(() => {
+    if (!selectedProperty) return "";
+    const params = new URLSearchParams();
+    params.set("checkIn", checkIn);
+    params.set("checkOut", checkOut);
     params.set("minOccupancy", String(guests));
     params.set("adults", String(guests));
-    return `${base}?${params.toString()}`;
+    return `${selectedProperty.bookingUrl}?${params.toString()}`;
   }, [selectedProperty, checkIn, checkOut, guests]);
+
+  const hasValidDates = Boolean(checkIn && checkOut);
+  const isUnavailable = rangeOverlapsBlocked(
+    checkIn,
+    checkOut,
+    effectiveUnavailableDates,
+  );
 
   const isBar = layout === "bar";
 
@@ -57,7 +140,6 @@ export default function BookingWidget({
             onChange={(e) => setSelectedSlug(e.target.value)}
             className="mt-1 w-full bg-transparent text-sm font-medium text-charcoal outline-none"
           >
-            <option value="">Any Property</option>
             {properties.map((p) => (
               <option key={p.slug} value={p.slug}>
                 {p.name}
@@ -76,7 +158,13 @@ export default function BookingWidget({
             setCheckOut(nextCheckOut);
           }}
           layout={layout}
+          unavailableDates={effectiveUnavailableDates}
         />
+        {loadingAvailability && (
+          <p className="mt-1.5 text-xs text-charcoal/40">
+            Checking availability…
+          </p>
+        )}
       </div>
 
       <div className={isBar ? "px-5 py-3 lg:py-2.5" : "mt-4"}>
@@ -108,17 +196,56 @@ export default function BookingWidget({
       </div>
 
       <div className={isBar ? "p-3 lg:flex lg:items-center" : "mt-6"}>
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`flex items-center justify-center gap-2 rounded-full bg-wine-600 text-sm font-semibold text-white transition hover:bg-wine-700 ${
-            isBar ? "h-full w-full px-6 py-3 lg:w-auto" : "w-full px-6 py-3.5"
-          }`}
-        >
-          <Search className="h-4 w-4" />
-          Check Availability
-        </a>
+        {isTerminal ? (
+          isUnavailable ? (
+            <button
+              type="button"
+              disabled
+              className={`flex cursor-not-allowed items-center justify-center gap-2 rounded-full bg-charcoal/10 text-sm font-semibold text-charcoal/50 ${
+                isBar ? "h-full w-full px-6 py-3 lg:w-auto" : "w-full px-6 py-3.5"
+              }`}
+            >
+              Unavailable for These Dates
+            </button>
+          ) : (
+            <a
+              href={guestyHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-disabled={!hasValidDates}
+              onClick={(e) => {
+                if (!hasValidDates) e.preventDefault();
+              }}
+              className={`flex items-center justify-center gap-2 rounded-full text-sm font-semibold transition ${
+                hasValidDates
+                  ? "bg-wine-600 text-white hover:bg-wine-700"
+                  : "cursor-not-allowed bg-charcoal/10 text-charcoal/50"
+              } ${isBar ? "h-full w-full px-6 py-3 lg:w-auto" : "w-full px-6 py-3.5"}`}
+            >
+              <CalendarCheck className="h-4 w-4" />
+              {hasValidDates ? "Book Now" : "Select Dates"}
+            </a>
+          )
+        ) : (
+          <Link
+            href={internalHref}
+            className={`flex items-center justify-center gap-2 rounded-full bg-wine-600 text-sm font-semibold text-white transition hover:bg-wine-700 ${
+              isBar ? "h-full w-full px-6 py-3 lg:w-auto" : "w-full px-6 py-3.5"
+            }`}
+          >
+            {navigateCtaLabel === "bookNow" ? (
+              <>
+                <CalendarCheck className="h-4 w-4" />
+                Book Now
+              </>
+            ) : (
+              <>
+                <Search className="h-4 w-4" />
+                Check Availability
+              </>
+            )}
+          </Link>
+        )}
       </div>
     </div>
   );

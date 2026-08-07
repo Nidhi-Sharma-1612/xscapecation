@@ -56,7 +56,7 @@ export default async function Hero() {
           className="animate-fade-in-up mx-auto mt-8 max-w-4xl"
           style={{ animationDelay: "380ms" }}
         >
-          <BookingWidget layout="bar" properties={properties} />
+          <BookingWidget layout="bar" properties={properties} showAvailability />
         </div>
       </div>
 

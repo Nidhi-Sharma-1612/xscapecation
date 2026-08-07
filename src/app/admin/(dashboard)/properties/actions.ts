@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentAdmin } from "@/lib/auth/current-admin";
+import { syncPropertyAvailabilityNow } from "@/lib/content/availability";
 import {
   createProperty,
   deleteProperty,
@@ -18,6 +19,11 @@ const nullableString = z.preprocess(
 const nullableInt = z.preprocess(
   (v) => (v === "" || v == null ? null : Number(v)),
   z.number().int().min(0).nullable(),
+);
+
+const nullableUrl = z.preprocess(
+  (v) => (v === "" || v == null ? null : v),
+  z.string().url("Enter a valid iCal URL.").nullable(),
 );
 
 const PropertySchema = z.object({
@@ -49,6 +55,7 @@ const PropertySchema = z.object({
   amenities: z.array(z.string()),
   houseRules: z.array(z.string()),
   additionalRules: nullableString,
+  guestyICalUrl: nullableUrl,
 });
 
 function parseArray(value: FormDataEntryValue | null): string[] {
@@ -84,6 +91,7 @@ function parsePropertyForm(formData: FormData) {
     amenities: parseArray(formData.get("amenities")),
     houseRules: parseArray(formData.get("houseRules")),
     additionalRules: formData.get("additionalRules"),
+    guestyICalUrl: formData.get("guestyICalUrl"),
   });
 }
 
@@ -137,4 +145,20 @@ export async function updatePropertyAction(
 export async function deletePropertyAction(id: string): Promise<void> {
   const admin = await getCurrentAdmin();
   await deleteProperty(id, admin?.id ?? null);
+}
+
+export type SyncAvailabilityState = { error?: string; success?: boolean } | null;
+
+export async function syncAvailabilityAction(
+  id: string,
+): Promise<SyncAvailabilityState> {
+  const admin = await getCurrentAdmin();
+  try {
+    await syncPropertyAvailabilityNow(id, admin?.id ?? null);
+    return { success: true };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Sync failed.",
+    };
+  }
 }

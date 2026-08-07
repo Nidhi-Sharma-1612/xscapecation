@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import ArrayField from "@/components/admin/ArrayField";
 import ImageUploader from "@/components/admin/ImageUploader";
+import SyncNowButton from "@/components/admin/SyncNowButton";
 import type { PropertyFormState } from "@/app/admin/(dashboard)/properties/actions";
 import type { properties } from "@/lib/db/schema";
 
@@ -279,6 +280,32 @@ export default function PropertyForm({
               className={inputClass}
             />
           </Field>
+        </div>
+      </Section>
+
+      <Section title="Guesty Calendar Sync">
+        <div className="flex flex-col gap-5">
+          <Field label="Guesty iCal URL (optional)">
+            <input
+              name="guestyICalUrl"
+              type="url"
+              placeholder="https://.../calendar.ics"
+              defaultValue={initialValues?.guestyICalUrl ?? ""}
+              className={inputClass}
+            />
+            <p className="mt-1.5 text-xs text-charcoal/50">
+              Guesty dashboard → Listings → this property → Calendar → Calendar
+              sync (iCal) → Export Guesty calendar. Syncs blocked dates only —
+              Guesty Lite doesn&apos;t expose pricing or real-time sync, so
+              this can lag by up to a few hours.
+            </p>
+          </Field>
+          {initialValues?.id && initialValues.guestyICalUrl && (
+            <SyncNowButton
+              propertyId={initialValues.id}
+              initialSyncedAt={initialValues.availabilitySyncedAt}
+            />
+          )}
         </div>
       </Section>
 

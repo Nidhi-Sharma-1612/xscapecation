@@ -108,22 +108,14 @@ export default function PropertyCard({ property }: { property: Property }) {
           </span>
         </div>
 
-        <div className="mt-auto flex items-center justify-between pt-5">
+        <div className="mt-auto pt-5">
           <Link
             href={`/properties/${property.slug}`}
-            className="text-sm font-semibold text-charcoal/60 transition-colors hover:text-wine-600"
-          >
-            View Details
-          </Link>
-          <a
-            href={property.bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             className="group/link inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-wine-600 transition-all hover:gap-2.5"
           >
-            Check Availability
+            View Details
             <ArrowRight className="h-4 w-4 transition-transform group-hover/link:translate-x-0.5" />
-          </a>
+          </Link>
         </div>
       </div>
     </div>

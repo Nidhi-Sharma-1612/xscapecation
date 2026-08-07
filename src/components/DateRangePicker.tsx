@@ -31,11 +31,13 @@ export default function DateRangePicker({
   checkOut,
   onChange,
   layout = "card",
+  unavailableDates = [],
 }: {
   checkIn: string;
   checkOut: string;
   onChange: (checkIn: string, checkOut: string) => void;
   layout?: "bar" | "card";
+  unavailableDates?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => isoToDate(checkIn || todayISO()));
@@ -57,15 +59,21 @@ export default function DateRangePicker({
 
   const todayIso = todayISO();
   const cells = getMonthMatrix(viewDate);
+  const blockedSet = new Set(unavailableDates);
+
+  const rangeCrossesBlocked = (start: string, end: string) =>
+    unavailableDates.some((blocked) => blocked > start && blocked < end);
 
   const handleDayClick = (date: Date) => {
     const iso = dateToISO(date);
-    if (iso < todayIso) return;
+    if (iso < todayIso || blockedSet.has(iso)) return;
 
     if (!checkIn || (checkIn && checkOut) || iso <= checkIn) {
       onChange(iso, "");
       return;
     }
+
+    if (rangeCrossesBlocked(checkIn, iso)) return;
 
     onChange(checkIn, iso);
     setOpen(false);
@@ -146,7 +154,9 @@ export default function DateRangePicker({
               if (!date) return <span key={`empty-${i}`} />;
 
               const iso = dateToISO(date);
-              const disabled = iso < todayIso;
+              const isPast = iso < todayIso;
+              const isBlocked = blockedSet.has(iso);
+              const disabled = isPast || isBlocked;
               const isCheckIn = iso === checkIn;
               const isCheckOut = iso === checkOut;
               const inRange =
@@ -157,11 +167,14 @@ export default function DateRangePicker({
                   key={iso}
                   type="button"
                   disabled={disabled}
+                  aria-label={isBlocked ? `${date.getDate()} — unavailable` : undefined}
                   onClick={() => handleDayClick(date)}
                   className={`relative h-9 text-sm transition-colors ${
-                    disabled
-                      ? "cursor-not-allowed text-charcoal/25"
-                      : "text-charcoal hover:bg-cream-dark"
+                    isBlocked
+                      ? "cursor-not-allowed text-charcoal/25 line-through decoration-charcoal/30"
+                      : isPast
+                        ? "cursor-not-allowed text-charcoal/25"
+                        : "text-charcoal hover:bg-cream-dark"
                   } ${inRange ? "bg-wine-600/10" : ""} ${
                     isCheckIn || isCheckOut
                       ? "rounded-full bg-wine-600 font-semibold text-white hover:bg-wine-600"
@@ -181,6 +194,11 @@ export default function DateRangePicker({
               ? "Select a check-in date"
               : "Select a check-out date"}
           </p>
+          {unavailableDates.length > 0 && (
+            <p className="mt-1 text-center text-[11px] text-charcoal/40">
+              Struck-through dates are already booked
+            </p>
+          )}
         </div>
       )}
     </div>

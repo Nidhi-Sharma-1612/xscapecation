@@ -62,6 +62,11 @@ export const properties = pgTable("properties", {
   houseRules: jsonb("house_rules").$type<string[]>().notNull().default([]),
   additionalRules: text("additional_rules"),
   sortOrder: integer("sort_order").notNull().default(0),
+  guestyICalUrl: text("guesty_ical_url"),
+  blockedDates: jsonb("blocked_dates").$type<string[]>().notNull().default([]),
+  availabilitySyncedAt: timestamp("availability_synced_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
