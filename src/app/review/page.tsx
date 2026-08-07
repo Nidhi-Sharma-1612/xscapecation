@@ -5,7 +5,9 @@ import Footer from "@/components/Footer";
 import PageBanner from "@/components/PageBanner";
 import Reveal from "@/components/Reveal";
 import Reviews from "@/components/Reviews";
-import { PROPERTIES } from "@/data/properties";
+import { getProperties } from "@/data/properties";
+import { getSectionContent } from "@/lib/content/sections";
+import { getSiteSettings } from "@/lib/content/site-settings";
 
 export const metadata: Metadata = {
   title: "Reviews | Xscapecation Oasis",
@@ -13,33 +15,44 @@ export const metadata: Metadata = {
     "See what guests are saying about their stay at Xscapecation Oasis in Tulsa, Oklahoma.",
 };
 
-const STATS = [
-  { icon: Star, value: "4.9", label: "Average Rating" },
-  { icon: ThumbsUp, value: "196", label: "Verified Stays" },
-  { icon: Home, value: `${PROPERTIES.length}`, label: "Properties in Tulsa" },
-];
+type BannerContent = {
+  eyebrow: string;
+  title: string;
+  image: string;
+  imageAlt: string;
+};
+type ReviewStatsContent = {
+  ratingValue: string;
+  ratingLabel: string;
+  staysValue: string;
+  staysLabel: string;
+};
 
-const PLATFORMS = [
-  { label: "Airbnb", href: "https://www.airbnb.com/rooms/891908835909763419" },
-  { label: "VRBO", href: "https://www.vrbo.com/3329386" },
-  {
-    label: "Booking.com",
-    href: "https://www.booking.com/hotel/us/xscapecation-oasis.html",
-  },
-  {
-    label: "TripAdvisor",
-    href: "https://www.tripadvisor.com/VacationRentalReview-g51697-d26242053-Xscapecation_Oasis-Tulsa_Oklahoma.html",
-  },
-];
+export default async function ReviewPage() {
+  const [properties, banner, reviewStats, settings] = await Promise.all([
+    getProperties(),
+    getSectionContent<BannerContent>("review", "review-banner"),
+    getSectionContent<ReviewStatsContent>("review", "review-stats"),
+    getSiteSettings(),
+  ]);
 
-export default function ReviewPage() {
+  const STATS = [
+    { icon: Star, value: reviewStats.ratingValue, label: reviewStats.ratingLabel },
+    { icon: ThumbsUp, value: reviewStats.staysValue, label: reviewStats.staysLabel },
+    {
+      icon: Home,
+      value: `${properties.length}`,
+      label: "Properties in Tulsa",
+    },
+  ];
+
   return (
     <main className="flex flex-1 flex-col">
       <PageBanner
-        eyebrow="Guest Love"
-        title="Reviews"
-        image="/images/property/bedroom.jpg"
-        imageAlt="Bedroom at Xscapecation Oasis"
+        eyebrow={banner.eyebrow}
+        title={banner.title}
+        image={banner.image}
+        imageAlt={banner.imageAlt}
       />
 
       <section className="bg-cream-dark pt-24">
@@ -68,7 +81,7 @@ export default function ReviewPage() {
             <span className="text-sm text-charcoal/60">
               Verified across:
             </span>
-            {PLATFORMS.map((platform) => (
+            {settings.bookingPlatforms.map((platform) => (
               <a
                 key={platform.label}
                 href={platform.href}

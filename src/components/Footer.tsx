@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FacebookIcon, InstagramIcon } from "./icons/SocialIcons";
 import Reveal from "./Reveal";
+import { getSiteSettings } from "@/lib/content/site-settings";
 
 const QUICK_LINKS = [
   { label: "Home", href: "/" },
@@ -14,39 +15,23 @@ const QUICK_LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
-const SOCIAL_LINKS = [
-  {
-    label: "Instagram",
-    href: "https://www.instagram.com/xscapecation_oasis/",
-    icon: InstagramIcon,
-  },
-  {
-    label: "Facebook",
-    href: "https://www.facebook.com/profile.php?id=61558453996839",
-    icon: FacebookIcon,
-  },
-];
+export default async function Footer() {
+  const settings = await getSiteSettings();
+  const telHref = `tel:1${settings.phone.replace(/\D/g, "")}`;
 
-const BOOKING_PLATFORMS = [
-  {
-    label: "Airbnb",
-    href: "https://www.airbnb.com/rooms/891908835909763419",
-  },
-  {
-    label: "VRBO",
-    href: "https://www.vrbo.com/3329386",
-  },
-  {
-    label: "Booking.com",
-    href: "https://www.booking.com/hotel/us/xscapecation-oasis.html",
-  },
-  {
-    label: "TripAdvisor",
-    href: "https://www.tripadvisor.com/VacationRentalReview-g51697-d26242053-Xscapecation_Oasis-Tulsa_Oklahoma.html",
-  },
-];
+  const socialLinks = [
+    settings.instagramUrl && {
+      label: "Instagram",
+      href: settings.instagramUrl,
+      icon: InstagramIcon,
+    },
+    settings.facebookUrl && {
+      label: "Facebook",
+      href: settings.facebookUrl,
+      icon: FacebookIcon,
+    },
+  ].filter(Boolean) as { label: string; href: string; icon: typeof InstagramIcon }[];
 
-export default function Footer() {
   return (
     <footer id="contact" className="bg-charcoal py-16 text-white/80">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
@@ -54,7 +39,7 @@ export default function Footer() {
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-3">
               <Image
-                src="/images/brand/logo.png"
+                src={settings.logoUrl || "/images/brand/logo.png"}
                 alt="Xscapecation Oasis"
                 width={56}
                 height={56}
@@ -64,24 +49,27 @@ export default function Footer() {
                 Xscapecation Oasis
               </span>
             </Link>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed">
-              A recently renovated direct-booking vacation rental in Tulsa,
-              Oklahoma. Home away from home.
-            </p>
-            <div className="mt-6 flex gap-3">
-              {SOCIAL_LINKS.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={social.label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/80 transition-colors hover:border-gold-300 hover:text-gold-300"
-                >
-                  <social.icon className="h-4 w-4" />
-                </a>
-              ))}
-            </div>
+            {settings.footerBlurb && (
+              <p className="mt-4 max-w-sm text-sm leading-relaxed">
+                {settings.footerBlurb}
+              </p>
+            )}
+            {socialLinks.length > 0 && (
+              <div className="mt-6 flex gap-3">
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/80 transition-colors hover:border-gold-300 hover:text-gold-300"
+                  >
+                    <social.icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -109,20 +97,17 @@ export default function Footer() {
             <ul className="mt-4 space-y-3 text-sm">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 shrink-0 text-gold-300" />
-                <a
-                  href="tel:19189463014"
-                  className="transition hover:text-gold-300"
-                >
-                  (918) 946-3014
+                <a href={telHref} className="transition hover:text-gold-300">
+                  {settings.phone}
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0 text-gold-300" />
                 <a
-                  href="mailto:contact@xscapecationoasis.com"
+                  href={`mailto:${settings.email}`}
                   className="transition hover:text-gold-300"
                 >
-                  contact@xscapecationoasis.com
+                  {settings.email}
                 </a>
               </li>
             </ul>
@@ -133,7 +118,7 @@ export default function Footer() {
               Also Booking On
             </h3>
             <ul className="mt-4 space-y-2 text-sm">
-              {BOOKING_PLATFORMS.map((platform) => (
+              {settings.bookingPlatforms.map((platform) => (
                 <li key={platform.label}>
                   <a
                     href={platform.href}

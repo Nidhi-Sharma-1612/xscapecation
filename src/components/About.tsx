@@ -17,6 +17,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import Reveal from "./Reveal";
+import { getSectionContent } from "@/lib/content/sections";
 
 const QUICK_FACTS = [
   { icon: Bed, label: "2 Bedrooms" },
@@ -29,25 +30,40 @@ const QUICK_FACTS = [
   { icon: Sun, label: "Patio & Outdoor Dining" },
 ];
 
-export default function About({
+type AboutIntroContent = { eyebrow: string; heading: string; subheading: string };
+type AboutContentContent = {
+  image: string;
+  ratingText: string;
+  paragraph1: string;
+  paragraph2: string;
+  paragraph3: string;
+  buttonText: string;
+  buttonUrl: string;
+};
+
+export default async function About({
   hideHeading = false,
 }: {
   hideHeading?: boolean;
 }) {
+  const [intro, content] = await Promise.all([
+    getSectionContent<AboutIntroContent>("about", "about-intro"),
+    getSectionContent<AboutContentContent>("about", "about-content"),
+  ]);
+
   return (
     <section id="about" className="bg-cream py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
         {!hideHeading && (
           <Reveal className="mx-auto max-w-3xl text-center">
             <p className="mb-3 text-sm font-semibold tracking-[0.3em] text-wine-600 uppercase">
-              About Us
+              {intro.eyebrow}
             </p>
             <h2 className="font-serif text-4xl font-semibold text-charcoal sm:text-5xl lg:whitespace-nowrap">
-              Welcome to Xscapecation Oasis
+              {intro.heading}
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-base text-charcoal/70">
-              A recently renovated villa in the heart of Tulsa, styled to
-              feel like your own.
+              {intro.subheading}
             </p>
           </Reveal>
         )}
@@ -58,7 +74,7 @@ export default function About({
         >
           <div className="relative h-80 overflow-hidden md:h-full">
             <Image
-              src="/images/property/bedroom.jpg"
+              src={content.image}
               alt="Bedroom at Xscapecation Oasis"
               fill
               sizes="(min-width: 768px) 50vw, 100vw"
@@ -66,14 +82,13 @@ export default function About({
             />
             <div className="absolute top-6 left-6 flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-charcoal shadow-sm">
               <Star className="h-4 w-4 fill-gold-500 text-gold-500" />
-              4.9 · Verified Reviews
+              {content.ratingText}
             </div>
           </div>
 
           <div className="flex flex-col justify-center p-8 lg:p-12">
             <p className="text-base leading-relaxed text-charcoal/80">
-              This air-conditioned retreat keeps you close to the action
-              without sacrificing a quiet night&apos;s sleep.
+              {content.paragraph1}
             </p>
 
             <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-charcoal/60">
@@ -92,10 +107,7 @@ export default function About({
             </div>
 
             <p className="mt-6 text-base leading-relaxed text-charcoal/80">
-              Inside, two comfortable bedrooms and a full kitchen make it
-              easy to settle in, while the patio is the perfect spot for
-              morning coffee or an evening glass of wine. Arriving guests are
-              welcomed with a little something sweet.
+              {content.paragraph2}
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-charcoal/10 pt-6 text-sm text-charcoal/75">
@@ -108,16 +120,15 @@ export default function About({
             </div>
 
             <p className="mt-6 text-base leading-relaxed text-charcoal/80">
-              Once you&apos;re settled in, Tulsa&apos;s best is just minutes
-              away.
+              {content.paragraph3}
             </p>
 
             <Link
-              href="/explore"
+              href={content.buttonUrl}
               className="group/btn mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-wine-600 px-7 py-3 text-sm font-semibold text-white transition hover:bg-wine-700"
             >
               <Compass className="h-4 w-4" />
-              Explore Tulsa
+              {content.buttonText}
               <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
             </Link>
           </div>

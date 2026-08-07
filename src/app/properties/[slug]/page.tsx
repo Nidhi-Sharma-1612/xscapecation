@@ -21,17 +21,19 @@ import Navbar from "@/components/Navbar";
 import PropertyCard from "@/components/PropertyCard";
 import PropertyGallery from "@/components/PropertyGallery";
 import Reveal from "@/components/Reveal";
-import { getPropertyBySlug, PROPERTIES } from "@/data/properties";
+import { getProperties, getPropertyBySlug } from "@/data/properties";
+import { getSiteSettings } from "@/lib/content/site-settings";
 
-export function generateStaticParams() {
-  return PROPERTIES.map((property) => ({ slug: property.slug }));
+export async function generateStaticParams() {
+  const properties = await getProperties();
+  return properties.map((property) => ({ slug: property.slug }));
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/properties/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const property = getPropertyBySlug(slug);
+  const property = await getPropertyBySlug(slug);
   if (!property) return {};
 
   return {
@@ -44,10 +46,15 @@ export default async function PropertyDetailPage({
   params,
 }: PageProps<"/properties/[slug]">) {
   const { slug } = await params;
-  const property = getPropertyBySlug(slug);
+  const [property, allProperties, settings] = await Promise.all([
+    getPropertyBySlug(slug),
+    getProperties(),
+    getSiteSettings(),
+  ]);
   if (!property) notFound();
 
-  const otherProperties = PROPERTIES.filter((p) => p.slug !== slug);
+  const otherProperties = allProperties.filter((p) => p.slug !== slug);
+  const telHref = `tel:1${settings.phone.replace(/\D/g, "")}`;
 
   const features = [
     { icon: Users, label: `${property.guests} Guests` },
@@ -76,7 +83,7 @@ export default async function PropertyDetailPage({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal/90 via-charcoal/40 to-charcoal/60" />
 
-        <Navbar />
+        <Navbar logoUrl={settings.logoUrl ?? undefined} />
 
         <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-12 lg:px-10">
           <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
@@ -215,11 +222,11 @@ export default async function PropertyDetailPage({
                   Check-in {property.checkIn} · Check-out {property.checkOut}
                 </div>
                 <a
-                  href="tel:19189463014"
+                  href={telHref}
                   className="flex items-center gap-2 transition hover:text-wine-600"
                 >
                   <Phone className="h-4 w-4 shrink-0 text-wine-600" />
-                  (918) 946-3014
+                  {settings.phone}
                 </a>
               </div>
             </div>

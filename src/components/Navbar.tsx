@@ -16,7 +16,11 @@ const NAV_LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({
+  logoUrl = "/images/brand/logo.png",
+}: {
+  logoUrl?: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
@@ -41,7 +45,7 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/images/brand/logo.png"
+            src={logoUrl}
             alt="Xscapecation Oasis"
             width={56}
             height={56}

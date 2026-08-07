@@ -2,6 +2,8 @@ import { ExternalLink, Mail, Phone, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/PageBanner";
+import { getSectionContent } from "@/lib/content/sections";
+import { getSiteSettings } from "@/lib/content/site-settings";
 
 export const metadata: Metadata = {
   title: "Contact | Xscapecation Oasis",
@@ -9,37 +11,39 @@ export const metadata: Metadata = {
     "Get in touch or book your direct stay at Xscapecation Oasis in Tulsa, Oklahoma.",
 };
 
-const BOOKING_PLATFORMS = [
-  { label: "Airbnb", href: "https://www.airbnb.com/rooms/891908835909763419" },
-  { label: "VRBO", href: "https://www.vrbo.com/3329386" },
-  {
-    label: "Booking.com",
-    href: "https://www.booking.com/hotel/us/xscapecation-oasis.html",
-  },
-  {
-    label: "TripAdvisor",
-    href: "https://www.tripadvisor.com/VacationRentalReview-g51697-d26242053-Xscapecation_Oasis-Tulsa_Oklahoma.html",
-  },
-];
+type BannerContent = {
+  eyebrow: string;
+  title: string;
+  image: string;
+  imageAlt: string;
+};
+type ContactIntroContent = { eyebrow: string; heading: string; buttonText: string };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const [banner, intro, settings] = await Promise.all([
+    getSectionContent<BannerContent>("contact", "contact-banner"),
+    getSectionContent<ContactIntroContent>("contact", "contact-intro"),
+    getSiteSettings(),
+  ]);
+  const telHref = `tel:1${settings.phone.replace(/\D/g, "")}`;
+
   return (
     <main className="flex flex-1 flex-col">
       <PageBanner
-        eyebrow="Let's Talk"
-        title="Contact Us"
-        image="/images/properties/oasis-2/1.jpg"
-        imageAlt="Open-concept kitchen and living area at Xscapecation Oasis"
+        eyebrow={banner.eyebrow}
+        title={banner.title}
+        image={banner.image}
+        imageAlt={banner.imageAlt}
       />
 
       <section className="bg-cream py-24">
         <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-5 lg:px-10">
           <form className="min-w-0 lg:col-span-3">
             <p className="mb-3 text-sm font-semibold tracking-[0.3em] text-wine-600 uppercase">
-              Send a Message
+              {intro.eyebrow}
             </p>
             <h2 className="font-serif text-3xl font-semibold text-charcoal sm:text-4xl">
-              Book Your Stay
+              {intro.heading}
             </h2>
 
             <div className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -128,7 +132,7 @@ export default function ContactPage() {
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-wine-600 px-8 py-3.5 text-sm font-semibold tracking-wide text-white transition hover:bg-wine-700"
             >
               <Send className="h-4 w-4" />
-              Send Message
+              {intro.buttonText}
             </button>
           </form>
 
@@ -142,11 +146,8 @@ export default function ContactPage() {
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wine-600/10 text-wine-600">
                     <Phone className="h-4 w-4" />
                   </span>
-                  <a
-                    href="tel:19189463014"
-                    className="transition hover:text-wine-600"
-                  >
-                    (918) 946-3014
+                  <a href={telHref} className="transition hover:text-wine-600">
+                    {settings.phone}
                   </a>
                 </li>
                 <li className="flex items-center gap-3">
@@ -154,10 +155,10 @@ export default function ContactPage() {
                     <Mail className="h-4 w-4" />
                   </span>
                   <a
-                    href="mailto:contact@xscapecationoasis.com"
+                    href={`mailto:${settings.email}`}
                     className="transition hover:text-wine-600"
                   >
-                    contact@xscapecationoasis.com
+                    {settings.email}
                   </a>
                 </li>
               </ul>
@@ -168,7 +169,7 @@ export default function ContactPage() {
                 Also Booking On
               </h3>
               <div className="mt-4 flex flex-wrap gap-3">
-                {BOOKING_PLATFORMS.map((platform) => (
+                {settings.bookingPlatforms.map((platform) => (
                   <a
                     key={platform.label}
                     href={platform.href}
