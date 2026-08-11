@@ -110,11 +110,12 @@ export default function BookingWidget({
     params.set("checkOut", checkOut);
     params.set("minOccupancy", String(guests));
     params.set("adults", String(guests));
-    // Skip Guesty's property/"Request to Book" landing page and go straight
-    // to checkout — confirmed as a stable, directly-linkable route (not a
-    // one-time session URL) by following the real flow manually.
-    const baseUrl = selectedProperty.bookingUrl.replace(/\/$/, "");
-    return `${baseUrl}/checkout?${params.toString()}`;
+    // NOT linking straight to /checkout: confirmed in production that it
+    // depends on session/quote state Guesty's own "Request to Book" click
+    // creates client-side — landing on it cold (no prior state) causes an
+    // immediate bounce to a broken generic /properties URL. The property
+    // page itself is the reliable link; "Request to Book" stays one click.
+    return `${selectedProperty.bookingUrl}?${params.toString()}`;
   }, [selectedProperty, checkIn, checkOut, guests]);
 
   const hasValidDates = Boolean(checkIn && checkOut);
