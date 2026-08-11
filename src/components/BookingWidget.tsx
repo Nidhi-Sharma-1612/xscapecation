@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { getAvailabilityAction } from "@/app/properties/actions";
 import type { Property } from "@/data/properties";
-import { addDaysISO, todayISO } from "@/lib/date";
 import DateRangePicker from "./DateRangePicker";
 
 function rangeOverlapsBlocked(
@@ -45,10 +44,11 @@ export default function BookingWidget({
    * property's page. Defaults to "Check Availability" + a search icon. */
   navigateCtaLabel?: "checkAvailability" | "bookNow";
 }) {
-  const [checkIn, setCheckIn] = useState(() => initialCheckIn || todayISO());
-  const [checkOut, setCheckOut] = useState(
-    () => initialCheckOut || addDaysISO(todayISO(), 3),
-  );
+  // No default date range — the picker starts empty ("Add date") so guests
+  // always make a deliberate choice, unless dates arrive via prefill
+  // (e.g. navigated here from another widget with dates already picked).
+  const [checkIn, setCheckIn] = useState(() => initialCheckIn || "");
+  const [checkOut, setCheckOut] = useState(() => initialCheckOut || "");
   const [guests, setGuests] = useState(() => initialGuests ?? 1);
   // No "Any Property" option — the picker always has a real property
   // selected, defaulting to the first one, so "Check Availability" always
@@ -110,7 +110,11 @@ export default function BookingWidget({
     params.set("checkOut", checkOut);
     params.set("minOccupancy", String(guests));
     params.set("adults", String(guests));
-    return `${selectedProperty.bookingUrl}?${params.toString()}`;
+    // Skip Guesty's property/"Request to Book" landing page and go straight
+    // to checkout — confirmed as a stable, directly-linkable route (not a
+    // one-time session URL) by following the real flow manually.
+    const baseUrl = selectedProperty.bookingUrl.replace(/\/$/, "");
+    return `${baseUrl}/checkout?${params.toString()}`;
   }, [selectedProperty, checkIn, checkOut, guests]);
 
   const hasValidDates = Boolean(checkIn && checkOut);
