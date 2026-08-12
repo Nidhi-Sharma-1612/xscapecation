@@ -105,17 +105,19 @@ export default function BookingWidget({
 
   const guestyHref = useMemo(() => {
     if (!selectedProperty) return "";
-    const params = new URLSearchParams();
-    params.set("checkIn", checkIn);
-    params.set("checkOut", checkOut);
-    params.set("minOccupancy", String(guests));
-    params.set("adults", String(guests));
-    // NOT linking straight to /checkout: confirmed in production that it
-    // depends on session/quote state Guesty's own "Request to Book" click
-    // creates client-side — landing on it cold (no prior state) causes an
-    // immediate bounce to a broken generic /properties URL. The property
-    // page itself is the reliable link; "Request to Book" stays one click.
-    return `${selectedProperty.bookingUrl}?${params.toString()}`;
+    // Retesting /checkout now that the Guesty booking website was switched
+    // from Request-to-Book to Instant Booking — this exact combination
+    // (checkout path + params) bounced under Request-to-Book mode; unclear
+    // whether Instant Booking changes checkout's session/validation logic.
+    // Needs a live retest, not assumed to work.
+    const baseUrl = selectedProperty.bookingUrl.replace(/\/$/, "");
+    const params = new URLSearchParams({
+      checkIn,
+      checkOut,
+      minOccupancy: String(guests),
+      adults: String(guests),
+    });
+    return `${baseUrl}/checkout?${params.toString()}`;
   }, [selectedProperty, checkIn, checkOut, guests]);
 
   const hasValidDates = Boolean(checkIn && checkOut);
