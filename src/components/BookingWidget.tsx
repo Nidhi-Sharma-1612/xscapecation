@@ -105,19 +105,19 @@ export default function BookingWidget({
 
   const guestyHref = useMemo(() => {
     if (!selectedProperty) return "";
-    // Retesting /checkout now that the Guesty booking website was switched
-    // from Request-to-Book to Instant Booking — this exact combination
-    // (checkout path + params) bounced under Request-to-Book mode; unclear
-    // whether Instant Booking changes checkout's session/validation logic.
-    // Needs a live retest, not assumed to work.
-    const baseUrl = selectedProperty.bookingUrl.replace(/\/$/, "");
-    const params = new URLSearchParams({
+    // Direct navigation to /checkout is unreliable: Network tab evidence
+    // shows Guesty gates it behind a Split.io feature flag (splitChanges
+    // fetched early, before routing is decided) — which session bucket you
+    // land in is effectively random and outside our control, unrelated to
+    // login/incognito/cache/booking-mode (all ruled out). See memory
+    // (booking_flow_redesign) for the full investigation. Do not relink to
+    // /checkout without new evidence that this is actually controllable.
+    return `${selectedProperty.bookingUrl}?${new URLSearchParams({
       checkIn,
       checkOut,
       minOccupancy: String(guests),
       adults: String(guests),
-    });
-    return `${baseUrl}/checkout?${params.toString()}`;
+    }).toString()}`;
   }, [selectedProperty, checkIn, checkOut, guests]);
 
   const hasValidDates = Boolean(checkIn && checkOut);
